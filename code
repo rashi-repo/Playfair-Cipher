@@ -1,0 +1,98 @@
+import string
+
+def generate_key_square(key):
+    """Generates a 5x5 key square for the Playfair cipher."""
+    key = key.upper().replace('J', 'I')  # Replace 'J' with 'I'
+    key_letters = list(key)
+    alphabet = list(string.ascii_uppercase)
+    alphabet.remove('J')  # Remove 'J' from alphabet
+
+    for letter in key_letters:
+        if letter in alphabet:
+            alphabet.remove(letter)
+
+    key_letters = key_letters + alphabet  # Fill remaining letters
+    key_square = [key_letters[i:i + 5] for i in range(0, 25, 5)]
+
+    # Debug print
+    print("Key Square:")
+    for row in key_square:
+        print(' '.join(row))
+
+    return key_square
+
+def find_positions(char, key_square):
+    """Finds the row and column of a character in the key square."""
+    for i in range(5):
+        for j in range(5):
+            if key_square[i][j] == char:
+                return i, j
+    return -1, -1
+
+def encrypt(plaintext, key):
+    """Encrypts plaintext using the Playfair cipher."""
+    plaintext = plaintext.upper().replace('J', 'I')
+    key_square = generate_key_square(key)
+    ciphertext = ""
+
+    if len(plaintext) % 2 != 0:
+        plaintext += 'X'  # Padding if plaintext length is odd
+
+    for i in range(0, len(plaintext), 2):
+        digraph = plaintext[i:i + 2]
+
+        # Find positions of characters in the key square
+        char1_row, char1_col = find_positions(digraph[0], key_square)
+        char2_row, char2_col = find_positions(digraph[1], key_square)
+
+        # Apply encryption rules
+        if char1_row == char2_row:
+            ciphertext += key_square[char1_row][(char1_col + 1) % 5] + key_square[char2_row][(char2_col + 1) % 5]
+        elif char1_col == char2_col:
+            ciphertext += key_square[(char1_row + 1) % 5][char1_col] + key_square[(char2_row + 1) % 5][char2_col]
+        else:
+            ciphertext += key_square[char1_row][char2_col] + key_square[char2_row][char1_col]
+
+    return ciphertext
+
+def decrypt(ciphertext, key):
+    """Decrypts ciphertext using the Playfair cipher."""
+    ciphertext = ciphertext.upper().replace('J', 'I')
+    key_square = generate_key_square(key)
+    plaintext = ""
+
+    for i in range(0, len(ciphertext), 2):
+        digraph = ciphertext[i:i + 2]
+
+        # Find positions of characters in the key square
+        char1_row, char1_col = find_positions(digraph[0], key_square)
+        char2_row, char2_col = find_positions(digraph[1], key_square)
+
+        # Apply decryption rules (reverse of encryption)
+        if char1_row == char2_row:
+            plaintext += key_square[char1_row][(char1_col - 1) % 5] + key_square[char2_row][(char2_col - 1) % 5]
+        elif char1_col == char2_col:
+            plaintext += key_square[(char1_row - 1) % 5][char1_col] + key_square[(char2_row - 1) % 5][char2_col]
+        else:
+            plaintext += key_square[char1_row][char2_col] + key_square[char2_row][char1_col]
+
+    return plaintext
+
+def main():
+    print("Playfair Cipher CLI")
+    mode = input("Enter mode (Encrypt/Decrypt): ").strip()
+    plaintext = input("Enter text: ").strip()
+    key = input("Enter key: ").strip()
+
+    if mode.lower() == "encrypt":
+        result = encrypt(plaintext, key)
+        print("Ciphertext:", result)
+    elif mode.lower() == "decrypt":
+        result = decrypt(plaintext, key)
+        print("Plaintext:", result)
+    else:
+        print("Invalid mode. Please enter 'Encrypt' or 'Decrypt'.")
+
+if __name__ == "__main__":
+    main()
+
